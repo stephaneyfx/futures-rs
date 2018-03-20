@@ -1,0 +1,10 @@
+(function() {var implementors = {};
+implementors["futures_util"] = [{text:"impl&lt;F:&nbsp;<a class=\"trait\" href=\"futures_core/future/trait.IntoFuture.html\" title=\"trait futures_core::future::IntoFuture\">IntoFuture</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/iter/traits/trait.FromIterator.html\" title=\"trait core::iter::traits::FromIterator\">FromIterator</a>&lt;F&gt; for <a class=\"struct\" href=\"futures_util/future/struct.JoinAll.html\" title=\"struct futures_util::future::JoinAll\">JoinAll</a>&lt;F::<a class=\"type\" href=\"futures_core/future/trait.IntoFuture.html#associatedtype.Future\" title=\"type futures_core::future::IntoFuture::Future\">Future</a>&gt;",synthetic:false,types:["futures_util::future::join_all::JoinAll"]},{text:"impl&lt;F:&nbsp;<a class=\"trait\" href=\"futures_core/future/trait.Future.html\" title=\"trait futures_core::future::Future\">Future</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/iter/traits/trait.FromIterator.html\" title=\"trait core::iter::traits::FromIterator\">FromIterator</a>&lt;F&gt; for <a class=\"struct\" href=\"futures_util/stream/struct.FuturesUnordered.html\" title=\"struct futures_util::stream::FuturesUnordered\">FuturesUnordered</a>&lt;F&gt;",synthetic:false,types:["futures_util::stream::futures_unordered::FuturesUnordered"]},{text:"impl&lt;F:&nbsp;<a class=\"trait\" href=\"futures_core/future/trait.Future.html\" title=\"trait futures_core::future::Future\">Future</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/iter/traits/trait.FromIterator.html\" title=\"trait core::iter::traits::FromIterator\">FromIterator</a>&lt;F&gt; for <a class=\"struct\" href=\"futures_util/stream/struct.FuturesOrdered.html\" title=\"struct futures_util::stream::FuturesOrdered\">FuturesOrdered</a>&lt;F&gt;",synthetic:false,types:["futures_util::stream::futures_ordered::FuturesOrdered"]},];
+
+            if (window.register_implementors) {
+                window.register_implementors(implementors);
+            } else {
+                window.pending_implementors = implementors;
+            }
+        
+})()
