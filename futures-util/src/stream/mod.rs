@@ -43,6 +43,7 @@ mod take_while;
 mod then;
 mod unfold;
 mod zip;
+mod zip_latest;
 mod forward;
 mod recover;
 pub use self::and_then::AndThen;
@@ -73,6 +74,7 @@ pub use self::take_while::TakeWhile;
 pub use self::then::Then;
 pub use self::unfold::{Unfold, unfold};
 pub use self::zip::Zip;
+pub use self::zip_latest::ZipLatest;
 pub use self::forward::Forward;
 pub use self::recover::Recover;
 
@@ -801,6 +803,34 @@ pub trait StreamExt: Stream {
               Self: Sized,
     {
         zip::new(self, other)
+    }
+
+    /// Adapter for zipping two streams using their latest values.
+    ///
+    /// The zipped stream keeps a copy of the latest item produced per stream.
+    /// When the zipped stream is polled, it polls both underlying streams and
+    /// returns a pair made of the items returned by both streams. If one of
+    /// the underlying streams is exhausted or not ready, the returned pair is
+    /// made of the freshly returned item and the latest item of the exhausted
+    /// or not-ready stream.
+    /// The zipped stream ends when both underlying streams end, or if one of
+    /// the stream ends without ever producing an item. Errors are returned
+    /// immediately.
+    ///
+    /// # Diagram
+    ///
+    /// ```
+    /// ---a------b------c------> self
+    /// ------0---1---2---------> other
+    /// ------a0--b1--b2-c2-----> self.zip_latest(other)
+    /// ```
+    fn zip_latest<S>(self, other: S) -> ZipLatest<Self, S>
+        where Self::Item: Clone,
+              S: Stream<Error = Self::Error>,
+              S::Item: Clone,
+              Self: Sized
+    {
+        zip_latest::new(self, other)
     }
 
     /// Adapter for chaining two stream.
