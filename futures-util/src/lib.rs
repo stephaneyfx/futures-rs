@@ -11,6 +11,9 @@ extern crate futures_io;
 extern crate futures_sink;
 extern crate either;
 
+#[cfg(test)]
+extern crate futures_executor;
+
 #[cfg(feature = "std")]
 use futures_core::{Async, Future, Poll, task};
 

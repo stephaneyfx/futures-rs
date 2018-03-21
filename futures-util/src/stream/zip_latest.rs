@@ -80,3 +80,135 @@ fn enqueue<S: Stream>(stream: &mut S, queued: &mut Option<S::Item>,
         Ok(queued_fresh)
     }
 }
+
+#[cfg(test)]
+#[cfg(feature = "std")]
+mod tests {
+    use futures_core::{Async, Poll, Stream};
+    use futures_executor::block_on;
+    use std::boxed::Box;
+    use std::iter::{Iterator, self};
+    use std::vec::Vec;
+    use stream::{self, StreamExt};
+
+    #[test]
+    fn zip_2_empty_streams() {
+        let res = empty_stream::<(), ()>().zip_latest(empty_stream::<(), _>())
+            .collect();
+        assert_eq!(block_on(res), Ok(Vec::new()));
+    }
+
+    #[test]
+    fn zip_empty_stream_and_other() {
+        let res = empty_stream::<(), ()>().zip_latest(stream::iter_ok(0..3))
+            .collect();
+        assert_eq!(block_on(res), Ok(Vec::new()));
+    }
+
+    #[test]
+    fn zip_other_and_empty_stream() {
+        let res = stream::iter_ok(0..3).zip_latest(empty_stream::<(), ()>())
+            .collect();
+        assert_eq!(block_on(res), Ok(Vec::new()));
+    }
+
+    #[test]
+    fn zip_same_length() {
+        let res = stream::iter_ok::<_, ()>(0..3)
+            .zip_latest(stream::iter_ok(0..3))
+            .collect();
+        let expected = (0..3).zip(0..3).collect::<Vec<_>>();
+        assert_eq!(block_on(res), Ok(expected));
+    }
+
+    #[test]
+    fn zip_long_short() {
+        let res = stream::iter_ok::<_, ()>(0..3)
+            .zip_latest(stream::iter_ok(0..2))
+            .collect();
+        let expected = vec![(0, 0), (1, 1), (2, 1)];
+        assert_eq!(block_on(res), Ok(expected));
+    }
+
+    #[test]
+    fn zip_short_long() {
+        let res = stream::iter_ok::<_, ()>(0..2)
+            .zip_latest(stream::iter_ok(0..3))
+            .collect();
+        let expected = vec![(0, 0), (1, 1), (1, 2)];
+        assert_eq!(block_on(res), Ok(expected));
+    }
+
+    #[test]
+    fn zip_with_error_left() {
+        let res = stream::iter_result(vec![Ok(0), Ok(1), Err(()), Ok(2)])
+            .zip_latest(stream::iter_ok::<_, ()>(0..3))
+            .then(|x| Ok::<_, ()>(x.ok()))
+            .filter_map(Ok)
+            .collect();
+        let expected = (0..3).zip(0..3).collect::<Vec<_>>();
+        assert_eq!(block_on(res), Ok(expected));
+    }
+
+    #[test]
+    fn zip_with_error_right() {
+        let res = stream::iter_ok::<_, ()>(0..3)
+            .zip_latest(stream::iter_result(vec![Ok(0), Ok(1), Err(()), Ok(2)]))
+            .then(|x| Ok::<_, ()>(x.ok()))
+            .filter_map(Ok)
+            .collect();
+        let expected = (0..3).zip(0..3).collect::<Vec<_>>();
+        assert_eq!(block_on(res), Ok(expected));
+    }
+
+    #[test]
+    fn zip_with_yield_left() {
+        let values = vec![
+            Ok::<_, ()>(Async::Ready(0)),
+            Ok(Async::Ready(1)),
+            Ok(Async::Pending),
+            Ok(Async::Ready(2)),
+        ];
+        let other = stream::iter_ok::<_, ()>(0..3);
+        let res = stream_from_poll_iter(values).zip_latest(other).collect();
+        let expected = vec![(0, 0), (1, 1), (1, 2), (2, 2)];
+        assert_eq!(block_on(res), Ok(expected));
+    }
+
+    #[test]
+    fn zip_with_yield_right() {
+        let values = vec![
+            Ok::<_, ()>(Async::Ready(0)),
+            Ok(Async::Ready(1)),
+            Ok(Async::Pending),
+            Ok(Async::Ready(2)),
+        ];
+        let other = stream_from_poll_iter(values);
+        let res = stream::iter_ok::<_, ()>(0..3).zip_latest(other).collect();
+        let expected = vec![(0, 0), (1, 1), (2, 1), (2, 2)];
+        assert_eq!(block_on(res), Ok(expected));
+    }
+
+    fn empty_stream<T, E>() -> stream::IterOk<iter::Empty<T>, E> {
+        stream::iter_ok(iter::empty())
+    }
+
+    fn stream_from_poll_iter<'a, I, T, E>(list: I)
+        -> Box<Stream<Item = T, Error = E> + 'a>
+        where
+            I: IntoIterator<Item = Poll<T, E>>,
+            I::IntoIter: 'a
+    {
+        let mut list = list.into_iter();
+        let st = stream::poll_fn(move |cx| match list.next() {
+            Some(Ok(Async::Ready(x))) => Ok(Async::Ready(Some(x))),
+            Some(Ok(Async::Pending)) => {
+                cx.waker().wake();
+                Ok(Async::Pending)
+            }
+            Some(Err(e)) => Err(e),
+            None => Ok(Async::Ready(None)),
+        });
+        Box::new(st)
+    }
+}

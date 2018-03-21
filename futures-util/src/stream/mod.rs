@@ -819,7 +819,7 @@ pub trait StreamExt: Stream {
     ///
     /// # Diagram
     ///
-    /// ```
+    /// ```text
     /// ---a------b------c------> self
     /// ------0---1---2---------> other
     /// ------a0--b1--b2-c2-----> self.zip_latest(other)
